@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border-bottom: 1px solid #ccc;
+        }
+        .header img {
+            margin-right: auto;
+        }
+        .header span {
+            margin-left: auto;
+        }
+        .header .message-icon {
+            margin-left: 15px;
+            cursor: pointer;
+        }
+        .header .message-icon img {
+            width: 24px;
+            height: 24px;
+        }
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .chat-item:hover {
+            background-color: #f0f0f0;
+        }
+        .chat-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .chat-item .chat-info {
+            flex: 1;
+        }
+        .chat-item .chat-info strong {
+            display: block;
+            font-size: 14px;
+        }
+        .chat-item .chat-info span {
+            display: block;
+            color: #555;
+            font-size: 12px;
+        }
+        .chat-item .chat-time {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .chat-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .chat-input button {
+            padding: 10px 15px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="logo.png" alt="Logo">
+            <span>Welcome, Alon</span>
+            <a href="chats.html" class="message-icon">
+                <img src="message-icon.png" alt="Messages">
+            </a>
+        </div>
+        <div class="chat-list" id="chat-list"></div>
+        <div id="chat-content" class="chat-content">
+            <div id="chat-header" class="chat-header"></div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Type a message">
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+        
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    fetchChats();
+    document.getElementById('send-button').addEventListener('click', sendMessage);
+});
+
+function fetchChats() {
+    fetch('http://localhost:3000/api/chats', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then(response => response.json())
+    .then(chats => {
+        const chatListElement = document.getElementById('chat-list');
+        chatListElement.innerHTML = '';
+        chats.forEach(chat => {
+            const chatItem = document.createElement('div');
+            chatItem.classList.add('chat-item');
+            chatItem.dataset.chatId = chat.chatID;
+            chatItem.dataset.otherUserId = chat.otherUserID;
+            chatItem.innerHTML = `
+                <img src="${chat.userImage}" alt="User Image">
+                <div class="chat-info">
+                    <strong>${chat.carPlate}</strong>
+                    <span>${chat.lastMessage}</span>
+                </div>
+                <div class="chat-time">${new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            `;
+            chatItem.addEventListener('click', () => loadMessages(chat.chatID, chat.otherUserID));
+            chatListElement.appendChild(chatItem);
+        });
+    })
+    .catch(error => console.error('Error fetching chats:', error));
+}
+
+function loadMessages(chatID, otherUserID) {
+    currentChatID = chatID;
+    currentOtherUserID = otherUserID;
+
+    console.log("loadMessages - currentChatID:", currentChatID);  // Debugging statement
+
+    fetch(`http://localhost:3000/api/messages?chatID=${chatID}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then(response => response.json())
+    .then(messages => {
+        const chatContentElement = document.getElementById('chat-content');
+        chatContentElement.style.display = 'flex';
+        const messagesElement = document.getElementById('chat-messages');
+        messagesElement.innerHTML = '';
+        messages.forEach(message => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<strong>${message.fromUserName}</strong>: ${message.message}`;
+            messagesElement.appendChild(messageElement);
+        });
+    })
+    .catch(error => console.error('Error fetching messages:', error));
+}
+
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const messageText = messageInput.value;
+
+    if (messageText.trim() === '') return;
+
+    console.log("currentChatID:", currentChatID);  // Debugging statement
+    console.log("currentOtherUserID:", currentOtherUserID);  // Debugging statement
+
+    const message = {
+        fromUserID: currentUser.userID,
+        toUserID: currentOtherUserID,
+        carID: currentChatID,
+        message: messageText,
+        date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        chatID: currentChatID
+    };
+
+    fetch('http://localhost:3000/api/messages', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(message)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        messageInput.value = '';
+        loadMessages(currentChatID, currentOtherUserID);
+    })
+    .catch(error => console.error('Error sending message:', error));
+}
+
+    </script>
+</body>
+</html>

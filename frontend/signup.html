@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .message {
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sign Up</h1>
+    <form id="signupForm">
+        <input type="text" name="phoneNumber" placeholder="Phone Number" required>
+        <input type="text" name="firstName" placeholder="First Name" required>
+        <input type="text" name="lastName" placeholder="Last Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="text" name="address" placeholder="Address" required>
+        <input type="text" name="img" placeholder="Image URL" required>
+
+        <h2>Car Details</h2>
+        <input type="text" name="carModel" placeholder="Car Model" required>
+        <input type="text" name="carColor" placeholder="Car Color" required>
+        <input type="text" name="carPlate" placeholder="Car Plate" required>
+        <input type="text" name="carImage" placeholder="Car Image URL" required>
+
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <div id="message" class="message" style="display: none;"></div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const formData = {
+        phoneNumber: event.target.phoneNumber.value,
+        firstName: event.target.firstName.value,
+        lastName: event.target.lastName.value,
+        email: event.target.email.value,
+        password: event.target.password.value,
+        address: event.target.address.value,
+        img: event.target.img.value,
+        cars: [
+            {
+                model: event.target.carModel.value,
+                color: event.target.carColor.value,
+                numberOfReports: 0,
+                image: event.target.carImage.value,
+                plate: event.target.carPlate.value
+            }
+        ]
+    };
+
+    console.log('Form Data:', formData);
+
+    fetch('http://localhost:3000/api/users/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Success:', data);
+        const messageDiv = document.getElementById('message');
+        messageDiv.className = 'message success';
+        messageDiv.innerText = 'Registration successful!';
+        messageDiv.style.display = 'block';
+        // Optionally, you can redirect the user to the login page
+         window.location.href = 'login.html';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const messageDiv = document.getElementById('message');
+        messageDiv.className = 'message error';
+        messageDiv.innerText = 'Registration failed: ' + error.message;
+        messageDiv.style.display = 'block';
+    });
+});
+
+</script>
+</body>
+</html>
