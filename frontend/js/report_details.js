@@ -41,13 +41,13 @@ function displayReportDetails(report) {
 }
 
 function initializeMap(location) {
-    const map = L.map('report-map').setView([51.505, -0.09], 13); // Default coordinates
+    const map = L.map('report-map').setView([51.505, -0.09], 13); 
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Geocode the location to get the coordinates
+    
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`)
         .then(response => response.json())
         .then(data => {

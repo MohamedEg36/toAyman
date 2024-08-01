@@ -11,17 +11,30 @@ app.use(express.json());
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
-const carRoutes = require('./routes/cars'); 
+const carRoutes = require('./routes/cars');
 const reportRoutes = require('./routes/reports');
 const messageRoutes = require('./routes/messages');
 const chatRoutes = require('./routes/chats');
+//const rescueRoutes = require('./routes/rescue'); 
+const volunteerRoutes = require('./routes/volunteer'); 
+//const notificationRoutes = require('./routes/notification');
+const volunteerUpdatesRouter = require('./routes/volunteerUpdates');
+const rescueRequestRoutes = require('./routes/rescue');
+
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/cars', carRoutes);  
+app.use('/api/cars', carRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/chats', chatRoutes);
+//app.use('/api/rescue', rescueRoutes); 
+app.use('/api/volunteer', volunteerRoutes); 
+//app.use('/api/notifications', notificationRoutes);
+app.use('/api/volunteerUpdates', volunteerUpdatesRouter);
+app.use('/api/rescue-requests', rescueRequestRoutes);
+
 
 app.use(express.static(path.join(__dirname, '../frontend')));
 

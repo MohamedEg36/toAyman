@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(car => {
         displayCarDetails(car);
-        currentCar = car; // Store the current car details for later use
+        currentCar = car; 
     })
     .catch(error => {
         console.error('Error fetching car:', error);
@@ -45,10 +45,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 let reportReason = '';
 let reportDetails = {};
-let currentCar = null; // Store the current car details
+let currentCar = null; 
 
 function displayCarDetails(car) {
-    currentCar = car; // Store the current car details
+    currentCar = car; 
     document.getElementById('car-plate-number').innerText = car.plate;
     document.getElementById('car-image-wrapper').innerHTML = `<img src="${car.image}" alt="Car Image">`;
     document.getElementById('car-company').innerText = `Company: ${car.carCompany}`;
@@ -127,7 +127,7 @@ function showSuccessModal() {
     const successModal = document.getElementById('successModal');
     successModal.style.display = 'block';
 
-    // Add the "Send a Message" button functionality
+    
     const sendMessageButton = document.createElement('button');
     sendMessageButton.innerText = 'Send a Message';
     sendMessageButton.onclick = () => {

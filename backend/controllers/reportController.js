@@ -1,6 +1,5 @@
 const pool = require('../models/db');
 
-// Get all reports for the authenticated user
 exports.getReports = (req, res) => {
     const userID = req.user.id;
     pool.query('SELECT * FROM tbl_115_reports WHERE userID = ?', [userID], (err, results) => {
@@ -9,7 +8,6 @@ exports.getReports = (req, res) => {
     });
 };
 
-// Get a specific report by its ID
 exports.getReportById = (req, res) => {
     const { id } = req.params;
     pool.query('SELECT * FROM tbl_115_reports WHERE reportID = ?', [id], (err, results) => {
@@ -18,7 +16,6 @@ exports.getReportById = (req, res) => {
     });
 };
 
-// Add a new report
 exports.addReport = (req, res) => {
     const userID = req.user.id;
     const { plate, reason, location, date, image, map, carID } = req.body;

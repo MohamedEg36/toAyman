@@ -70,6 +70,24 @@ exports.findCarById = (req, res) => {
     });
 };
 
+exports.countUserCars = (req, res) => {
+    const userID = req.user.id;
+    const query = `
+        SELECT COUNT(*) as carCount
+        FROM tbl_115_cars
+        WHERE userID = ?
+    `;
+    pool.query(query, [userID], (err, results) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Database query error' });
+            return;
+        }
+        console.log('Count query results:', results); 
+        res.json({ carCount: results[0].carCount }); 
+    });
+};
+
 
 
 

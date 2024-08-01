@@ -1,34 +1,53 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if token is stored in localStorage
-    console.log('Stored token:', localStorage.getItem('token'));
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user'));
 
-    // Fetch user details
-    fetch('http://localhost:3000/api/auth/me', {
-        method: 'GET',
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-    })
-    .then(response => response.json())
-    .then(user => {
-        console.log('User:', user);
-        document.getElementById('welcome-message').innerText = `Welcome ${user.firstName}`;
-        document.getElementById('profile-picture').src = user.img;
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    if (user) {
+        const welcomeMessage = document.getElementById('welcome-message');
+        const profilePicture = document.getElementById('profile-picture');
         document.getElementById('profile-picture-menu').src = user.img;
         document.getElementById('profile-name').innerText = `${user.firstName} ${user.lastName}`;
         document.getElementById('profile-email').innerText = user.email;
-        document.getElementById('car-count').innerText = `${user.cars.length} cars`;
-        
-    })
-    .catch(error => {
-        console.error('Error fetching user details:', error);
-    });
 
-    // Fetch and display volunteer updates
-    fetch('http://localhost:3000/api/volunteers/updates')
+        welcomeMessage.textContent += user.firstName;
+        profilePicture.src = user.img;
+
+        fetchCarCount();
+    }
+
+    function fetchCarCount() {
+        fetch('http://localhost:3000/api/cars/count', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Car count data:', data); 
+            document.getElementById('car-count').innerText = data.carCount;
+        })
+        .catch(error => console.error('Error fetching car count:', error));
+    }
+
+    fetchVolunteerUpdates();
+
+    function fetchVolunteerUpdates() {
+        fetch('http://localhost:3000/api/volunteerUpdates', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
         .then(response => response.json())
         .then(data => {
             const updatesContainer = document.getElementById('volunteer-updates');
+            updatesContainer.innerHTML = ''; 
+
             data.forEach(update => {
                 const updateDiv = document.createElement('div');
                 updateDiv.classList.add('volunteer-update');
@@ -42,25 +61,60 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         })
         .catch(error => console.error('Error fetching the updates:', error));
+    }
 
-    // Initialize Leaflet map
-    var map = L.map('map').setView([51.505, -0.09], 13);
+    var map = L.map('map').setView([32.09007825320591, 34.80367638400265], 13);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    L.marker([32.09001462584199, 34.80355837513058]).addTo(map)
-        .bindPopup('A pretty CSS popup.<br> Easily customizable.')
-        .openPopup();
+    function locateUser() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(success, error);
+        } else {
+            alert('Geolocation is not supported by this browser.');
+        }
+    }
 
-    // Add event listener to the report button
+    function success(position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        console.log(`Latitude: ${lat}, Longitude: ${lon}`); 
+
+        const apiKey = '4086e24eac344b50b80b7e6f0b357f6d';
+        const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    const location = data.results[0].formatted;
+                    document.getElementById('location').innerText = location;
+
+                    map.setView([lat, lon], 13);
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup('You are here: ' + location)
+                        .openPopup();
+                } else {
+                    console.error('No results found for the location');
+                }
+            })
+            .catch(error => console.error('Error fetching the location:', error));
+    }
+
+    function error(err) {
+        console.error(`ERROR(${err.code}): ${err.message}`);
+        alert('Unable to retrieve your location.');
+    }
+
+    locateUser();
+
     const makeReportButton = document.getElementById('make-report-button');
     makeReportButton.addEventListener('click', () => {
         window.location.href = 'car-finder.html';
     });
 
-    // Toggle side menu
     const menuToggle = document.getElementById('menu-toggle');
     const sideMenu = document.getElementById('side-menu');
     const overlay = document.getElementById('overlay');
@@ -77,42 +131,46 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('menu-open');
     });
 
-    // Switch toggle logic
-    const roadUpdatesSwitch = document.getElementById('road-updates');
-    const volunteerUpdatesSwitch = document.getElementById('volunteer-updates-switch');
-    roadUpdatesSwitch.addEventListener('change', () => {
-        if (roadUpdatesSwitch.checked) {
-            volunteerUpdatesSwitch.checked = false;
-            // Fetch and display road updates
-            // Example: fetchRoadUpdates();
+    const volunteerLink = document.getElementById('volunteer-link');
+    const volunteerText = document.getElementById('volunteer-text');
+
+    fetch('http://localhost:3000/api/volunteer/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.isVolunteer) {
+            volunteerText.textContent = 'I am a Volunteer';
         }
-    });
-    volunteerUpdatesSwitch.addEventListener('change', () => {
-        if (volunteerUpdatesSwitch.checked) {
-            roadUpdatesSwitch.checked = false;
-            // Fetch and display volunteer updates
-            fetchVolunteerUpdates();
-        }
+    })
+    .catch(error => console.error('Error fetching volunteer status:', error));
+
+    volunteerLink.addEventListener('click', function(event) {
+        event.preventDefault();
+
+        fetch('http://localhost:3000/api/volunteer/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to register as volunteer, status: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            volunteerText.textContent = 'I am a Volunteer';
+            alert('You are now registered as a volunteer.');
+        })
+        .catch(error => {
+            console.error('Error registering as volunteer:', error);
+            alert('Failed to register as volunteer. Please try again later.');
+        });
     });
 
-    function fetchVolunteerUpdates() {
-        fetch('/volunteer/updates')
-            .then(response => response.json())
-            .then(data => {
-                const updatesContainer = document.getElementById('volunteer-updates');
-                updatesContainer.innerHTML = '';
-                data.forEach(update => {
-                    const updateDiv = document.createElement('div');
-                    updateDiv.classList.add('volunteer-update');
-                    updateDiv.innerHTML = `<span>${update.issue}, ${update.location} ${update.date}</span>
-                                           <button class="info-button">i</button>`;
-                    updatesContainer.appendChild(updateDiv);
-                });
-            })
-            .catch(error => console.error('Error fetching the updates:', error));
-    }
-
-    // Log out functionality
     const logoutButton = document.getElementById('logout');
     logoutButton.addEventListener('click', () => {
         localStorage.removeItem('token');

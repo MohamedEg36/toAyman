@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const carID = urlParams.get('carID'); // Assuming carID is the ID
+    const carID = urlParams.get('carID');
     const user = localStorage.getItem('user');
 
     if (carID) {
@@ -59,9 +59,6 @@ function loadMessages() {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble', message.fromUserID === currentUser.userID ? 'sent' : 'received');
 
-            const img = document.createElement('img');
-            img.src = message.fromUserID === currentUser.userID ? currentUser.img : currentCar.ownerImg;
-
             const messageText = document.createElement('div');
             messageText.classList.add('message-text');
             messageText.textContent = message.message;
@@ -70,7 +67,6 @@ function loadMessages() {
             messageTime.classList.add('message-time');
             messageTime.textContent = new Date(message.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            messageBubble.appendChild(img);
             messageBubble.appendChild(messageText);
             messageBubble.appendChild(messageTime);
 
@@ -98,10 +94,12 @@ function sendMessage() {
     const message = {
         fromUserID: currentUser.userID,
         toUserID: currentCar.userID,
-        carID: currentCar.carID,
+        carID: currentCar.carID, // Ensure `carID` is included
         message: messageText,
         date: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
+
+    console.log('Sending message:', message); // Debugging line
 
     fetch('http://localhost:3000/api/messages', {
         method: 'POST',
@@ -118,8 +116,8 @@ function sendMessage() {
         return response.json();
     })
     .then(data => {
-        messageInput.value = ''; // Clear input field
-        loadMessages(); // Reload messages to include the new message
+        messageInput.value = '';
+        loadMessages();
     })
     .catch(error => console.error('Error sending message:', error));
 }

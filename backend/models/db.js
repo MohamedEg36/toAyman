@@ -7,10 +7,9 @@ const pool = mysql.createPool({
     user: 'dbusrShnkr24',
     password: 'studDBpwWeb2!',
     database: 'dbShnkr24stud',
-    connectTimeout: 10000 // 10 seconds
+    connectTimeout: 10000 
 });
 
-// Promisify for Node.js async/await.
 pool.query = util.promisify(pool.query);
 
 module.exports = pool;

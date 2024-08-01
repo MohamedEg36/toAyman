@@ -66,7 +66,6 @@ function displayReports(reportList) {
         reportListElement.appendChild(li);
     });
 
-    // Add event listeners to the delete buttons
     document.querySelectorAll('.fa-trash').forEach(button => {
         button.addEventListener('click', (event) => {
             deleteReportFromHistory(event.target.dataset.id, event);

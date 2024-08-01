@@ -129,102 +129,129 @@
         
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-    fetchChats();
-    document.getElementById('send-button').addEventListener('click', sendMessage);
+     document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatID = urlParams.get('chatID'); 
+    const user = localStorage.getItem('user');
+
+    if (chatID) {
+        fetch(`http://localhost:3000/api/chats/id/${chatID}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        .then(response => response.json())
+        .then(chat => {
+            currentChat = chat;
+            document.getElementById('chat-info').innerText = `Chat ID: ${chatID}`;
+            loadMessages();
+        })
+        .catch(error => {
+            console.error('Error fetching chat details:', error);
+        });
+    } else {
+        console.error('Chat ID is missing or invalid in the URL.');
+    }
+
+    if (user) {
+        try {
+            currentUser = JSON.parse(user);
+        } catch (error) {
+            console.error('Error parsing user details:', error);
+        }
+    } else {
+        console.error('User is not logged in or user details are missing.');
+    }
 });
 
-function fetchChats() {
-    fetch('http://localhost:3000/api/chats', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    })
-    .then(response => response.json())
-    .then(chats => {
-        const chatListElement = document.getElementById('chat-list');
-        chatListElement.innerHTML = '';
-        chats.forEach(chat => {
-            const chatItem = document.createElement('div');
-            chatItem.classList.add('chat-item');
-            chatItem.dataset.chatId = chat.chatID;
-            chatItem.dataset.otherUserId = chat.otherUserID;
-            chatItem.innerHTML = `
-                <img src="${chat.userImage}" alt="User Image">
-                <div class="chat-info">
-                    <strong>${chat.carPlate}</strong>
-                    <span>${chat.lastMessage}</span>
-                </div>
-                <div class="chat-time">${new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            `;
-            chatItem.addEventListener('click', () => loadMessages(chat.chatID, chat.otherUserID));
-            chatListElement.appendChild(chatItem);
-        });
-    })
-    .catch(error => console.error('Error fetching chats:', error));
-}
+let currentChat = null;
+let currentUser = null;
 
-function loadMessages(chatID, otherUserID) {
-    currentChatID = chatID;
-    currentOtherUserID = otherUserID;
+function loadMessages() {
+    const token = localStorage.getItem('token');
 
-    console.log("loadMessages - currentChatID:", currentChatID);  // Debugging statement
+    if (!currentChat || !currentUser) {
+        console.error('currentUser or currentChat is not set');
+        return;
+    }
 
-    fetch(`http://localhost:3000/api/messages?chatID=${chatID}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    fetch(`http://localhost:3000/api/messages?chatID=${currentChat.chatID}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
     })
     .then(response => response.json())
     .then(messages => {
-        const chatContentElement = document.getElementById('chat-content');
-        chatContentElement.style.display = 'flex';
-        const messagesElement = document.getElementById('chat-messages');
-        messagesElement.innerHTML = '';
+        const messageContent = document.getElementById('message-content');
+        messageContent.innerHTML = '';
+
         messages.forEach(message => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.innerHTML = `<strong>${message.fromUserName}</strong>: ${message.message}`;
-            messagesElement.appendChild(messageElement);
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble', message.fromUserID === currentUser.userID ? 'sent' : 'received');
+
+            const messageText = document.createElement('div');
+            messageText.classList.add('message-text');
+            messageText.textContent = message.message;
+
+            const messageTime = document.createElement('span');
+            messageTime.classList.add('message-time');
+            messageTime.textContent = new Date(message.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messageBubble.appendChild(messageText);
+            messageBubble.appendChild(messageTime);
+
+            messageContent.appendChild(messageBubble);
         });
+
+        messageContent.scrollTop = messageContent.scrollHeight;
     })
     .catch(error => console.error('Error fetching messages:', error));
 }
 
 function sendMessage() {
+    if (!currentUser || !currentChat) {
+        console.error('currentUser or currentChat is not set');
+        return;
+    }
+
     const messageInput = document.getElementById('message-input');
     const messageText = messageInput.value;
+    if (messageText.trim() === '') {
+        return;
+    }
 
-    if (messageText.trim() === '') return;
-
-    console.log("currentChatID:", currentChatID);  // Debugging statement
-    console.log("currentOtherUserID:", currentOtherUserID);  // Debugging statement
-
+    const token = localStorage.getItem('token');
     const message = {
         fromUserID: currentUser.userID,
-        toUserID: currentOtherUserID,
-        carID: currentChatID,
+        toUserID: currentChat.userID,
+        chatID: currentChat.chatID, // Ensure `chatID` is included and not null
         message: messageText,
-        date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        chatID: currentChatID
+        date: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
+
+    console.log('Sending message:', message); // Debugging line
 
     fetch('http://localhost:3000/api/messages', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(message)
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error('Network response was not ok ' + response.statusText);
         }
         return response.json();
     })
     .then(data => {
-        messageInput.value = '';
-        loadMessages(currentChatID, currentOtherUserID);
+        messageInput.value = ''; 
+        loadMessages(); 
     })
     .catch(error => console.error('Error sending message:', error));
 }
+
 
     </script>
 </body>

@@ -1,7 +1,7 @@
 const pool = require('../models/db');
 
 exports.getUpdates = (req, res) => {
-    const sql = 'SELECT * FROM tbl_115_volunteer_updates ORDER BY date DESC';
+    const sql = 'SELECT * FROM tbl_115_update ORDER BY date DESC';
 
     pool.query(sql, (err, results) => {
         if (err) {

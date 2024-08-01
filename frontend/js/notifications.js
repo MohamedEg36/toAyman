@@ -10,63 +10,39 @@ document.addEventListener('DOMContentLoaded', function() {
         profilePicture.src = user.img;
     }
 
-    fetchNotifications();
+    fetchRescueRequests();
 });
 
-function fetchNotifications() {
-    fetch('/notifications')
-        .then(response => response.json())
-        .then(data => {
-            const notificationsList = document.getElementById('notifications-list');
 
-            // Clear the existing content
-            notificationsList.innerHTML = '';
+function fetchRescueRequests() {
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:3000/api/rescue-requests', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Fetched data:', data);  
 
-            const sections = ['Now', 'Recently', 'Older'];
-            sections.forEach(section => {
-                const sectionDiv = document.createElement('div');
-                sectionDiv.classList.add('notification-section');
+        const notificationsList = document.getElementById('notifications-list');
 
-                const sectionTitle = document.createElement('h2');
-                sectionTitle.textContent = section;
-                sectionDiv.appendChild(sectionTitle);
+        // Clear the existing content (removed this line)
+        // notificationsList.innerHTML = '';
 
-                data[section.toLowerCase()].forEach(notification => {
-                    const notificationItem = document.createElement('div');
-                    notificationItem.classList.add('notification-item');
+        data.forEach(rescue_request => {
+            const notificationItem = document.createElement('div');
+            notificationItem.classList.add('notification-item');
 
-                    const carImage = document.createElement('img');
-                    carImage.src = notification.carImage || 'images/default_car.png'; // Use a default image if not provided
-                    carImage.alt = 'Car Image';
-                    notificationItem.appendChild(carImage);
+            const notificationText = document.createElement('span');
+            notificationText.textContent = `${rescue_request.reason} at ${rescue_request.location} on ${new Date(rescue_request.time).toLocaleString()}`;
+            notificationItem.appendChild(notificationText);
 
-                    const notificationText = document.createElement('span');
-                    notificationText.textContent = `${notification.carId} ${notification.message}`;
-                    notificationItem.appendChild(notificationText);
-
-                    if (notification.isImportant) {
-                        const notificationIcon = document.createElement('span');
-                        notificationIcon.classList.add('notification-icon');
-                        notificationIcon.textContent = '!';
-                        notificationItem.appendChild(notificationIcon);
-                    }
-
-                    notificationItem.addEventListener('click', () => openMessage(notification.carId));
-                    sectionDiv.appendChild(notificationItem);
-                });
-
-                notificationsList.appendChild(sectionDiv);
-                if (section !== 'Older') {
-                    const hr = document.createElement('hr');
-                    notificationsList.appendChild(hr);
-                }
-            });
-        })
-        .catch(error => console.error('Error fetching notifications:', error));
-}
-
-function openMessage(carId) {
-    // Store the car ID in local storage to be used in messages.html
-    localStorage.setItem('carId', carId);
-    window.location.href = 'messages.html';
+            notificationsList.appendChild(notificationItem);
+        });
+    })
+    .catch(error => console.error('Error fetching rescue requests:', error));
 }
